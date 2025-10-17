@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand } from "@aws-sdk/client-sqs";
 
 const PORT = 3000;
@@ -8,6 +9,7 @@ const clients = new Set();
 const sqsClient = new SQSClient({ region: 'eu-west-3' });
 
 const app = express();
+app.use(cors());
 app.get('/', (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
