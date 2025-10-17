@@ -29,6 +29,7 @@
     "test": ""
   },
   "dependencies": {
+    "@aws-sdk/client-sqs": "^3.911.0",
     "express": "^5.1.0"
   }
 }
