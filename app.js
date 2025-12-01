@@ -5,8 +5,9 @@ import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand } from "@aws-sdk
 const PORT = 3000;
 const QUEUE_URL = "https://sqs.eu-west-3.amazonaws.com/340752836075/DietiEstates-Insertions-Queue";
 
-const clients = new Set();
 const sqsClient = new SQSClient({ region: 'eu-west-3' });
+const clients = new Set();
+const sentMessages = new Set();
 
 const app = express();
 app.use(cors());
@@ -20,6 +21,11 @@ app.get('/', (req, res) => {
 
     clients.add(res);
     console.log('Client connected. Total clients:', clients.size);
+
+    // Send previously sent messages to the newly connected client
+    sentMessages.forEach(message => {
+        res.write(`data: ${JSON.stringify(message)}\n\n`);
+    });
 
     req.on('close', () => {
         clients.delete(res);
@@ -62,6 +68,8 @@ async function pollSQS() {
 
         broadcastNotification(message);
 
+        sentMessages.add(message);
+
         await sqsClient.send(new DeleteMessageCommand({
             QueueUrl: QUEUE_URL,
             ReceiptHandle: message.ReceiptHandle
@@ -69,7 +77,13 @@ async function pollSQS() {
     });
 }
 
+async function clearSentMessages() {
+    sentMessages.clear();
+    console.log('Cleared sent messages cache');
+}
+
 setInterval(pollSQS, 1000);
+setInterval(clearSentMessages, 60000);
 
 app.listen(PORT, () => {
     console.log(`SSE service is running on http://localhost:${PORT}`);
